@@ -1,7 +1,5 @@
 # Diggity Jobs
 
-A brief description of what this project does and who it's for.
-
 ## Description
 
 This project is a comprehensive job management system that automates the process of scraping job listings from various sources, tracking job applications, and managing job-related outreach efforts. It features a user-friendly web interface for easy interaction and management of job listings.
