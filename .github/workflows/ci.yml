@@ -18,7 +18,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'  # or any version you're using
+        python-version: '3.8'
     
     - name: Install dependencies
       run: |
@@ -27,6 +27,6 @@ jobs:
 
     - name: Run tests
       env:
-        MONGODB_URL: mongodb://localhost:27017/test_db  # Adjust the DB URL if necessary
+        MONGODB_URL: mongodb://localhost:27017/test_db
       run: |
         python -m pytest
