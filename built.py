@@ -32,9 +32,6 @@ class JobListing:
         }
 
 
-jobs = []
-
-
 def generate_built_urls(days):
     return [
         f"https://builtin.com/jobs/san-francisco/dev-engineering?search=software+engineer&daysSinceUpdated={days}",
@@ -44,8 +41,10 @@ def generate_built_urls(days):
 
 
 def scrape_built_page(url):
+    added_jobs_count = 0
+    jobs_count = 0
     try:
-        response = requests.get(url, timeout=5)  # Set a reasonable timeout
+        response = requests.get(url, timeout=500)  # Set a reasonable timeout
     except requests.RequestException as e:
         print(f"Request failed: {e}")
         return
@@ -73,21 +72,35 @@ def scrape_built_page(url):
                             company_name = company_name_div.text.strip()
                             job_link = job.find("a", id="job-card-alias")["href"]
                             full_job_link = "https://builtin.com" + job_link
+                            jobs_count += 1
                             if job_link:
                                 job = JobListing(
                                     job_title=job_title,
                                     company=company_name,
                                     link=full_job_link,
                                 )
-                                jobs.append(job)
+                                job_dict = job.to_dict()
+
+                                # Check if the job already exists in the database
+                                if (
+                                    collection.count_documents(
+                                        {"link": job_dict["link"]}
+                                    )
+                                    == 0
+                                ):
+                                    added_jobs_count += 1
+                                    collection.insert_one(job_dict)
+    return (added_jobs_count, jobs_count)
 
 
 # Scrape the first page to find out how many pages there are
 def scrape_built_pages(days):
+    num_added_jobs = 0
+    num_jobs = 0
     for base_url in generate_built_urls(days):
         page_url = base_url + "&page={}"
         try:
-            response = requests.get(url, timeout=5)  # Set a reasonable timeout
+            response = requests.get(base_url, timeout=5)
         except requests.RequestException as e:
             print(f"Request failed: {e}")
             return
@@ -104,16 +117,9 @@ def scrape_built_pages(days):
             # Iterate over all pages and scrape each
             for page_number in range(1, max_page + 1):
                 url = base_url if page_number == 1 else page_url.format(page_number)
-                scrape_built_page(url)
+                (added_jobs_count, jobs_count) = scrape_built_page(url)
+                num_added_jobs += added_jobs_count
+                num_jobs += jobs_count
                 time.sleep(random.uniform(1, 6))  # Random delay between 1 to 5 seconds
 
-        count = 0
-        for job in jobs:
-            job_dict = job.to_dict()
-
-            # Check if the job already exists in the database
-            if collection.count_documents({"link": job_dict["link"]}) == 0:
-                count += 1
-                collection.insert_one(job_dict)
-
-        print(f"{count} of {len(jobs)} jobs were acceptable")
+        print(f"{num_added_jobs} of {num_jobs} jobs were acceptable at {page_url}")

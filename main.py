@@ -9,6 +9,7 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 from built import scrape_built_pages
 
+
 ### Pydantic models ###
 class OutReachCounts(BaseModel):
     """
@@ -118,7 +119,6 @@ async def read_jobs(jobs_collection=Depends(get_db)):
             },
         )
     )
-
     return jobs
 
 
@@ -136,7 +136,6 @@ async def read_job(job_link: str, jobs_collection=Depends(get_db)):
     """
     job = get_job_by_link(jobs_collection, job_link)
     return job
-
 
 
 @app.post("/job", response_model=JobListing, status_code=201)
@@ -248,7 +247,7 @@ async def scrape_built(
     background_tasks: BackgroundTasks, days: int = None
 ):  # Set default to None
     """
-    Your existing docstring...
+    Scrape builtin for jr roles
     """
     # Check if days parameter is provided and is a positive integer
     if days is None or days <= 0:

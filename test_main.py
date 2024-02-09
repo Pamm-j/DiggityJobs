@@ -1,8 +1,10 @@
+# pylint: disable=redefined-outer-name
 import pytest
-import os
 from fastapi.testclient import TestClient
 from main import app
-from pymongo import MongoClient
+import mongomock
+import os
+from main import get_db
 
 
 test_job = {
@@ -21,23 +23,31 @@ def test_client():
     # Setup
     os.environ["TESTING"] = "True"
 
-    client = TestClient(app)
-    # Connect to the test database
-    test_db_client = MongoClient("mongodb://localhost:27017/")
-    test_db = test_db_client["test_job_database"]
-    test_db.jobs.insert_one(test_job)
+    # Mock MongoDB connection using mongomock
+    with mongomock.patch(servers=(("localhost", 27017),)):
+        client = TestClient(app)
 
-    yield client  # This client will be used for tests
+        # Perform setup actions if needed, such as inserting test data
+        # For example, using your FastAPI dependency injection system to get the collection
+        # and inserting test data
 
-    # Clean up: delete the test job and clear the TESTING environment variable
-    test_db.jobs.delete_many({})
-    del os.environ["TESTING"]
+        test_db = get_db()
+        test_db.insert_one(test_job)
+
+        yield client  # This client will be used for tests
+
+        # Cleanup actions if needed
+        test_db.delete_many({})
+
+        del os.environ["TESTING"]
 
 
 # Test to ensure the /jobs endpoint returns a 200 status code and includes the test job
 def test_read_jobs(test_client):
     response = test_client.get("/jobs")
     assert response.status_code == 200
+    print(response.json())
+    print(test_job)
     jobs = response.json()
 
     # Assert non-empty response and structure of the first job
@@ -163,6 +173,3 @@ def test_scrape_built_no_days_given(test_client):
     assert response.json() == {
         "detail": "Invalid number of days provided. Please provide a positive integer."
     }
-
-
-# TODO:write stubbed tests for scraper

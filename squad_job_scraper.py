@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 # Fetch the webpage content
 url = "https://squadjobs.com/jobs?text=software+engineer"
 try:
-    response = requests.get(url, timeout=5)  # Set a reasonable timeout   
+    response = requests.get(url, timeout=5)  # Set a reasonable timeout
     html_content = response.text
 
     # Parse the HTML content
